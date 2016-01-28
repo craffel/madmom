@@ -83,6 +83,67 @@ class TestSmoothFunction(unittest.TestCase):
         self.assertTrue(np.allclose(result, np.asarray(result_7).T))
 
 
+class TestAdjustGainFunction(unittest.TestCase):
+
+    def test_types(self):
+        # mono signals
+        result = adjust_gain(sig_1d, 0)
+        self.assertTrue(type(result) == type(sig_1d))
+        self.assertTrue(len(result) == len(sig_1d))
+        self.assertTrue(result.shape == sig_1d.shape)
+        self.assertTrue(result.dtype == sig_1d.dtype)
+        # same with int16 dtype
+        result = adjust_gain(sig_1d.astype(np.int16), 0)
+        self.assertTrue(len(result) == len(sig_1d))
+        self.assertTrue(result.shape == sig_1d.shape)
+        self.assertTrue(result.dtype == np.int16)
+        # from file
+        signal = Signal(DATA_PATH + '/sample.wav')
+        result = adjust_gain(signal, 0)
+        self.assertIsInstance(result, Signal)
+        self.assertIsInstance(result, np.ndarray)
+        self.assertTrue(result.dtype == signal.dtype)
+        # multi-channel signals
+        result = adjust_gain(sig_2d, 0)
+        self.assertTrue(type(result) == type(sig_2d))
+        self.assertTrue(len(result) == len(sig_2d))
+        self.assertTrue(result.shape == sig_2d.shape)
+        self.assertTrue(result.dtype == sig_2d.dtype)
+        # same with int dtype
+        result = adjust_gain(sig_2d.astype(np.int), 0)
+        self.assertTrue(len(result) == len(sig_2d))
+        self.assertTrue(result.shape == sig_2d.shape)
+        self.assertTrue(result.dtype == np.int)
+
+    def test_values(self):
+        # mono signals
+        result = adjust_gain(sig_1d, 0)
+        self.assertTrue(np.allclose(result, sig_1d))
+        result = adjust_gain(sig_1d, -10)
+        self.assertTrue(np.allclose(result, 0.31622777 * sig_1d))
+        result = adjust_gain(sig_1d, 10)
+        self.assertTrue(np.allclose(result, 3.1622777 * sig_1d))
+        # same with int dtype
+        result = adjust_gain(sig_1d.astype(np.int), 0)
+        self.assertTrue(np.allclose(result, sig_1d.astype(np.int)))
+        result = adjust_gain(sig_1d.astype(np.int), -5)
+        self.assertTrue(np.allclose(result, 0 * sig_1d))
+        # multi-channel signals
+        result = adjust_gain(sig_2d, 0)
+        self.assertTrue(np.allclose(result, sig_2d))
+        result = adjust_gain(sig_2d, -3)
+        self.assertTrue(np.allclose(result, 0.70794578 * sig_2d))
+        # same with int16 dtype
+        result = adjust_gain(sig_2d.astype(np.int16), 0)
+        self.assertTrue(np.allclose(result, sig_2d))
+        result = adjust_gain(sig_2d.astype(np.int16), -1)
+        self.assertTrue(np.allclose(result, 0 * sig_2d))
+
+    def test_errors(self):
+        with self.assertRaises(ValueError):
+            adjust_gain(sig_2d.astype(np.int16), +60)
+
+
 class TestAttenuateFunction(unittest.TestCase):
 
     def test_types(self):
@@ -115,60 +176,36 @@ class TestAttenuateFunction(unittest.TestCase):
         self.assertTrue(result.shape == sig_2d.shape)
         self.assertTrue(result.dtype == np.int)
 
-    def test_values(self):
-        # mono signals
-        result = attenuate(sig_1d, 0)
-        self.assertTrue(np.allclose(result, sig_1d))
-        result = attenuate(sig_1d, 10)
-        self.assertTrue(np.allclose(result, 0.31622777 * sig_1d))
-        # same as int dtype
-        result = attenuate(sig_1d.astype(np.int), 0)
-        self.assertTrue(np.allclose(result, sig_1d.astype(np.int)))
-        result = attenuate(sig_1d.astype(np.int), 5)
-        self.assertTrue(np.allclose(result, 0 * sig_1d))
-        # multi-channel signals
-        result = attenuate(sig_2d, 0)
-        self.assertTrue(np.allclose(result, sig_2d))
-        result = attenuate(sig_2d, 3)
-        self.assertTrue(np.allclose(result, 0.70794578 * sig_2d))
-        # same as int16 dtype
-        result = attenuate(sig_2d.astype(np.int16), 0)
-        self.assertTrue(np.allclose(result, sig_2d))
-        result = attenuate(sig_2d.astype(np.int16), 1)
-        self.assertTrue(np.allclose(result, 0 * sig_2d))
-
 
 class TestNormalizeFunction(unittest.TestCase):
 
     def test_types(self):
         # mono signals
         result = normalize(sig_1d)
-        self.assertTrue(result.dtype == float)
         self.assertTrue(len(result) == len(sig_1d))
         self.assertTrue(result.shape == sig_1d.shape)
-        self.assertTrue(result.dtype == sig_1d.dtype)
+        self.assertTrue(result.dtype == np.float32)
         # same as int16 dtype
         result = normalize(sig_1d.astype(np.int16))
         self.assertTrue(len(result) == len(sig_1d))
         self.assertTrue(result.shape == sig_1d.shape)
-        self.assertTrue(result.dtype == np.float)
+        self.assertTrue(result.dtype == np.float32)
         # from file
         signal = Signal(DATA_PATH + '/sample.wav')
         result = normalize(signal)
         self.assertIsInstance(result, Signal)
         self.assertIsInstance(result, np.ndarray)
-        self.assertTrue(result.dtype == np.float)
+        self.assertTrue(result.dtype == np.float32)
         # multi-channel signals
         result = normalize(sig_2d)
-        self.assertTrue(result.dtype == float)
         self.assertTrue(len(result) == len(sig_2d))
         self.assertTrue(result.shape == sig_2d.shape)
-        self.assertTrue(result.dtype == sig_2d.dtype)
+        self.assertTrue(result.dtype == np.float32)
         # same as int32 dtype
         result = normalize(sig_2d.astype(np.int32))
         self.assertTrue(len(result) == len(sig_2d))
         self.assertTrue(result.shape == sig_2d.shape)
-        self.assertTrue(result.dtype == np.float)
+        self.assertTrue(result.dtype == np.float32)
 
     def test_values(self):
         # mono signals
@@ -176,17 +213,22 @@ class TestNormalizeFunction(unittest.TestCase):
         self.assertTrue(np.allclose(result, sig_1d))
         result = normalize(sig_1d * 0.5)
         self.assertTrue(np.allclose(result, sig_1d))
+        self.assertTrue(np.max(result) == 1)
         # same as int15 dtype
         result = normalize(10 * sig_1d.astype(np.int16))
         self.assertTrue(np.allclose(result, sig_1d))
+        self.assertTrue(np.max(result) == 1)
         # multi-channel signals
         result = normalize(sig_2d)
         self.assertTrue(np.allclose(result, sig_2d))
+        self.assertTrue(np.max(result) == 1)
         result = normalize(sig_2d * 0.5)
         self.assertTrue(np.allclose(result, sig_2d))
+        self.assertTrue(np.max(result) == 1)
         # same as int dtype
         result = normalize(3 * sig_2d.astype(np.int))
         self.assertTrue(np.allclose(result, sig_2d))
+        self.assertTrue(np.max(result) == 1)
 
 
 class TestMixFunction(unittest.TestCase):
@@ -452,6 +494,7 @@ class TestLoadAudioFileFunction(unittest.TestCase):
         # test ffmpeg loader
         f = DATA_PATH + '/stereo_sample.flac'
         signal, sample_rate = load_audio_file(f, num_channels=1)
+        print(signal[:5])
         # results are rounded differently, thus allow atol=1
         self.assertTrue(np.allclose(signal[:5], [35, 35, 31, 33, 33], atol=1))
         # avconv results in a different length of 182909 samples
@@ -600,10 +643,10 @@ class TestSignalProcessorClass(unittest.TestCase):
         result = processor.process(DATA_PATH + '/sample.wav')
         self.assertIsInstance(result, Signal)
         self.assertIsInstance(result, np.ndarray)
-        self.assertTrue(result.dtype == np.float)
+        self.assertTrue(result.dtype == np.float32)
 
-    def test_types_att(self):
-        processor = SignalProcessor(att=10)
+    def test_types_gain(self):
+        processor = SignalProcessor(gain=-10)
         self.assertIsInstance(processor, SignalProcessor)
         self.assertIsInstance(processor, Processor)
         result = processor.process(DATA_PATH + '/sample.wav')
@@ -615,13 +658,13 @@ class TestSignalProcessorClass(unittest.TestCase):
         self.assertIsInstance(SignalProcessor.SAMPLE_RATE, type(None))
         self.assertIsInstance(SignalProcessor.NUM_CHANNELS, type(None))
         self.assertIsInstance(SignalProcessor.NORM, bool)
-        self.assertIsInstance(SignalProcessor.ATT, float)
+        self.assertIsInstance(SignalProcessor.GAIN, float)
 
     def test_constant_values(self):
         self.assertEqual(SignalProcessor.SAMPLE_RATE, None)
         self.assertEqual(SignalProcessor.NUM_CHANNELS, None)
         self.assertEqual(SignalProcessor.NORM, False)
-        self.assertEqual(SignalProcessor.ATT, 0)
+        self.assertEqual(SignalProcessor.GAIN, 0)
 
     def test_values_file(self):
         processor = SignalProcessor()
@@ -639,13 +682,13 @@ class TestSignalProcessorClass(unittest.TestCase):
         processor = SignalProcessor()
         self.assertTrue(processor.num_channels is None)
         self.assertTrue(processor.norm is False)
-        self.assertTrue(processor.att == 0.)
+        self.assertTrue(processor.gain == 0.)
         processor.num_channels = 1
         processor.norm = True
-        processor.att = 10
+        processor.gain = -10
         self.assertTrue(processor.num_channels == 1)
         self.assertTrue(processor.norm is True)
-        self.assertTrue(processor.att == 10.)
+        self.assertTrue(processor.gain == -10.)
 
     def test_values_file_norm(self):
         processor = SignalProcessor(norm=True)
@@ -657,10 +700,11 @@ class TestSignalProcessorClass(unittest.TestCase):
         self.assertTrue(result.num_samples == 123481)
         self.assertTrue(result.sample_rate == 44100)
         self.assertTrue(result.num_channels == 1)
+        self.assertTrue(np.max(result.num_channels) == 1)
         self.assertTrue(np.allclose(result.length, 2.8))
 
-    def test_values_file_att(self):
-        processor = SignalProcessor(att=10)
+    def test_values_file_gaint(self):
+        processor = SignalProcessor(gain=-10)
         result = processor.process(DATA_PATH + '/sample.wav')
         self.assertTrue(np.allclose(result[:5],
                                     [-788, -793, -785, -846, -895]))
